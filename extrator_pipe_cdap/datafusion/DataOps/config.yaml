@@ -1,0 +1,6 @@
+pipeline_vars_dev:
+  bucket_name: gs://dataops-fusion-files
+  bucket_path: test
+  bucket_project_id: dataops
+  dataset_project_id: data-tools-developer
+  filename_pattern: tb_test.csv

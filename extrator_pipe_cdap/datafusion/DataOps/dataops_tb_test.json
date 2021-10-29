@@ -1,0 +1,153 @@
+{
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "scope": "SYSTEM",
+        "version": "6.4.0"
+    },
+    "config": {
+        "comments": [],
+        "connections": [
+            {
+                "from": "tb_test_csv",
+                "to": "Wrangler"
+            },
+            {
+                "from": "Wrangler",
+                "to": "load_tb_test_bq"
+            }
+        ],
+        "description": "Data Pipeline Application",
+        "driverResources": {
+            "memoryMB": 2048.0,
+            "virtualCores": 1.0
+        },
+        "engine": "spark",
+        "maxConcurrentRuns": 1.0,
+        "numOfRecordsPreview": 100.0,
+        "postActions": [],
+        "processTimingEnabled": true,
+        "properties": {},
+        "resources": {
+            "memoryMB": 2048.0,
+            "virtualCores": 1.0
+        },
+        "schedule": "0 * * * *",
+        "stageLoggingEnabled": true,
+        "stages": [
+            {
+                "id": "tb_test_csv",
+                "name": "tb_test_csv",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "google-cloud",
+                        "scope": "SYSTEM",
+                        "version": "0.17.0"
+                    },
+                    "label": "tb_test_csv",
+                    "name": "GCSFile",
+                    "properties": {
+                        "copyHeader": "true",
+                        "encrypted": "false",
+                        "fileEncoding": "UTF-8",
+                        "filenameOnly": "false",
+                        "format": "text",
+                        "path": "${bucket_name}/${bucket_path}/${filename_pattern}",
+                        "project": "${bucket_project_id}",
+                        "recursive": "false",
+                        "referenceName": "tb_test.csv",
+                        "sampleSize": "1000",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}",
+                        "serviceAccountType": "filePath",
+                        "serviceFilePath": "auto-detect",
+                        "skipHeader": "false"
+                    },
+                    "type": "batchsource"
+                }
+            },
+            {
+                "id": "Wrangler",
+                "inputSchema": [
+                    {
+                        "name": "tb_test_csv",
+                        "schema": "{\"type\":\"record\",\"name\":\"text\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}"
+                    }
+                ],
+                "name": "Wrangler",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"periodo\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre_meses\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "wrangler-transform",
+                        "scope": "SYSTEM",
+                        "version": "4.4.0"
+                    },
+                    "label": "Wrangler",
+                    "name": "Wrangler",
+                    "properties": {
+                        "directives": "parse-as-csv :body ';' true\ndrop :body",
+                        "field": "*",
+                        "on-error": "skip-error",
+                        "precondition": "false",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"periodo\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre_meses\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre\",\"type\":[\"string\",\"null\"]}]}",
+                        "workspaceId": "5ae1cb29-5a8e-495c-949c-1adae0d512b2"
+                    },
+                    "type": "transform"
+                }
+            },
+            {
+                "id": "load_tb_test_bq",
+                "inputSchema": [
+                    {
+                        "name": "Wrangler",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"periodo\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre_meses\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "name": "load_tb_test_bq",
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"periodo\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre_meses\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre\",\"type\":[\"string\",\"null\"]}]}"
+                    }
+                ],
+                "plugin": {
+                    "artifact": {
+                        "name": "google-cloud",
+                        "scope": "SYSTEM",
+                        "version": "0.17.0"
+                    },
+                    "label": "load_tb_test_bq",
+                    "name": "BigQueryTable",
+                    "properties": {
+                        "allowSchemaRelaxation": "false",
+                        "createPartitionedTable": "false",
+                        "dataset": "test_data_fusion",
+                        "datasetProject": "${dataset_project_id}",
+                        "location": "US",
+                        "operation": "insert",
+                        "partitioningType": "NONE",
+                        "project": "auto-detect",
+                        "referenceName": "tb_test_bq",
+                        "schema": "{\"name\":\"avroSchema\",\"type\":\"record\",\"fields\":[{\"name\":\"periodo\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre_meses\",\"type\":[\"string\",\"null\"]},{\"name\":\"bimestre\",\"type\":[\"string\",\"null\"]}]}",
+                        "serviceAccountType": "filePath",
+                        "serviceFilePath": "auto-detect",
+                        "table": "sink_df_test",
+                        "truncateTable": "true"
+                    },
+                    "type": "batchsink"
+                }
+            }
+        ]
+    },
+    "description": "Data Pipeline Application",
+    "name": "dataops_tb_test"
+}
